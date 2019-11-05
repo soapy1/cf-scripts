@@ -288,3 +288,12 @@ def is_github_api_limit_reached(e: github3.GitHubError, gh: github3.GitHub) -> b
               .strftime('%Y-%m-%dT%H:%M:%SZ'))
         return True
     return False
+
+
+def close_pr(pr_json, gh):
+    if gh is None:
+        gh = github3.login($USERNAME, $PASSWORD)
+    if not pr_json['state'] == 'closed':
+        pr_obj = github3.pulls.PullRequest(dict(pr_json), gh)
+        pr_obj.close()
+        pr_obj_d = pr_obj.as_dict()
