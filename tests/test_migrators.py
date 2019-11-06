@@ -4,8 +4,8 @@ import builtins
 import pytest
 import networkx as nx
 
-from conda_forge_tick.migrators import (JS, Version, Compiler, Noarch, Pinning, Rebuild, \
-    ArchRebuild, NoarchR, BlasRebuild, LicenseMigrator)
+from conda_forge_tick.migrators import (Version, Rebuild, \
+    ArchRebuild, LicenseMigrator)
 from conda_forge_tick.utils import parse_meta_yaml, frozen_to_json_friendly
 
 
@@ -1773,21 +1773,12 @@ extra:
     - kthyng
 """
 
-js = JS()
 version = Version()
 lm = LicenseMigrator()
 version_license_migrator = Version(piggy_back_migrations=[lm])
-compiler = Compiler()
-noarch = Noarch()
-noarchr = NoarchR()
-perl = Pinning(removals={"perl"})
-pinning = Pinning()
-
 rebuild = Rebuild(name='rebuild', cycles=[])
 rebuild.filter = lambda x: False
 
-blas_rebuild = BlasRebuild(cycles=[])
-blas_rebuild.filter = lambda x: False
 
 test_list = [
      (
@@ -1814,15 +1805,6 @@ test_list = [
             "migrator_version": Version.migrator_version,
             "version": "0.9",
         },
-        False,
-    ),
-   (
-        js,
-        sample_js,
-        correct_js,
-        {},
-        "Please merge the PR only after the tests have passed.",
-        {"migrator_name": "JS", "migrator_version": JS.migrator_version},
         False,
     ),
     (
@@ -1891,130 +1873,6 @@ test_list = [
         False,
     ),
     (
-        compiler,
-        sample_cb3,
-        correct_cb3,
-        {},
-        "N/A",
-        {"migrator_name": "Compiler", "migrator_version": Compiler.migrator_version},
-        False,
-    ),
-    # It seems this injects some bad state somewhere, mostly because it isn't
-    # valid yaml
-    (
-        js,
-        sample_js2,
-        correct_js,
-        {},
-        "Please merge the PR only after the tests have passed.",
-        {"migrator_name": "JS", "migrator_version": JS.migrator_version},
-        False,
-    ),
-    (
-        noarch,
-        sample_noarch,
-        updated_noarch,
-        {
-            "feedstock_name": "xpdan",
-            "req": [
-                "python",
-                "pip",
-                "numpy",
-                "scipy",
-                "matplotlib",
-                "pyyaml",
-                "scikit-beam",
-                "pyfai",
-                "pyxdameraulevenshtein",
-                "xray-vision",
-                "databroker",
-                "bluesky",
-                "streamz_ext",
-                "xpdsim",
-                "shed",
-                "xpdview",
-                "ophyd",
-                "xpdconf",
-            ],
-        },
-        "I think this feedstock could be built with noarch.\n"
-        "This means that the package only needs to be built "
-        "once, drastically reducing CI usage.\n",
-        {"migrator_name": "Noarch", "migrator_version": Noarch.migrator_version},
-        False,
-    ),
-    (
-        noarch,
-        sample_noarch_space,
-        updated_noarch_space,
-        {
-            "feedstock_name": "xpdan",
-            "req": [
-                "python",
-                "pip",
-                "numpy",
-                "scipy",
-                "matplotlib",
-                "pyyaml",
-                "scikit-beam",
-                "pyfai",
-                "pyxdameraulevenshtein",
-                "xray-vision",
-                "databroker",
-                "bluesky",
-                "streamz_ext",
-                "xpdsim",
-                "shed",
-                "xpdview",
-                "ophyd",
-                "xpdconf",
-            ],
-        },
-        "I think this feedstock could be built with noarch.\n"
-        "This means that the package only needs to be built "
-        "once, drastically reducing CI usage.\n",
-        {"migrator_name": "Noarch", "migrator_version": Noarch.migrator_version},
-        False,
-    ),
-    (
-        noarch,
-        sample_noarch_space,
-        updated_noarch_space,
-        {"feedstock_name": "python"},
-        "I think this feedstock could be built with noarch.\n"
-        "This means that the package only needs to be built "
-        "once, drastically reducing CI usage.\n",
-        {"migrator_name": "Noarch", "migrator_version": Noarch.migrator_version},
-        True,
-    ),
-    (
-        perl,
-        sample_pinning,
-        updated_perl,
-        {"req": {"toolchain3", "perl", "expat"}},
-        "I noticed that this recipe has version pinnings that may not be needed.",
-        {"migrator_name": "Pinning", "migrator_version": Pinning.migrator_version},
-        False,
-    ),
-    (
-        pinning,
-        sample_pinning,
-        updated_pinning,
-        {"req": {"toolchain3", "perl", "expat"}},
-        "perl: 5.22.2.1",
-        {"migrator_name": "Pinning", "migrator_version": Pinning.migrator_version},
-        False,
-    ),
-    (
-        noarchr,
-        sample_r_base,
-        updated_r_base,
-        {"feedstock_name": "r-stabledist"},
-        "I think this feedstock could be built with noarch",
-        {"migrator_name": "NoarchR", "migrator_version": noarchr.migrator_version},
-        False,
-    ),
-    (
         rebuild,
         sample_r_base2,
         updated_r_base2,
@@ -2023,36 +1881,6 @@ test_list = [
         {"migrator_name": "Rebuild", "migrator_version": rebuild.migrator_version, "name":"rebuild"},
         False,
     ),
-    (
-        noarchr,
-        sample_r_licenses_noarch,
-        updated_r_licenses_noarch,
-        {"feedstock_name": "r-stabledist"},
-        "I think this feedstock could be built with noarch",
-        {"migrator_name": "NoarchR", "migrator_version": noarchr.migrator_version},
-        False,
-    ),
-    (
-        blas_rebuild,
-        sample_blas,
-        updated_blas,
-        {"feedstock_name": "scipy"},
-        "This PR has been triggered in an effort to update for new BLAS scheme.",
-        {"migrator_name": "BlasRebuild", "migrator_version": blas_rebuild.migrator_version, "name": "blas2"},
-        False,
-    ),
-
-
-    # Disabled for now because the R license stuff has been purpossefully moved into the noarchR migrator
-    # (
-    #     noarchr,
-    #     sample_r_licenses_compiled,
-    #     updated_r_licenses_compiled,
-    #     {"feedstock_name": "r-stabledist"},
-    #     "It is likely this feedstock needs to be rebuilt.",
-    #     {"migrator_name": "Rebuild", "migrator_version": rebuild.migrator_version, "name":"rebuild"},
-    #     False,
-    # ),
 ]
 
 G = nx.DiGraph()
@@ -2097,10 +1925,8 @@ def test_migration(m, inp, output, kwargs, prb, mr_out, should_filter, tmpdir):
     with open(os.path.join(tmpdir, "meta.yaml"), "r") as f:
         actual_output = f.read()
     assert actual_output == output
-    if isinstance(m, Compiler):
-        assert m.messages in m.pr_body()
     # TODO: fix subgraph here (need this to be xsh file)
-    elif isinstance(m, Version):
+    if isinstance(m, Version):
         pass
     elif isinstance(m, Rebuild):
         return
